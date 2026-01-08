@@ -21,25 +21,42 @@ The system is designed to be **modular, scalable, and production-oriented**, whi
 ## Repository Structure
 rvm-system/
 │
-├── frontend/ # User interface (kiosk, admin, or mobile UI)
-│
-├── backend/ # APIs, business rules, coupon logic, logging
-│
-├── ai/ # Computer vision (training and inference)
-│
-├── hardware/ # Camera, printer, GPIO, and device integrations
-│
-├── shared/ # Shared contracts, schemas, and constants
-│
-├── docs/ # Architecture docs, setup guides, diagrams
-│
-├── scripts/ # Automation, setup, and helper scripts
-│
-├── infra/ # Docker, CI/CD, and infrastructure configuration
-│
-├── README.md
-└── .gitignore
 
+├── frontend/ # User interface (kiosk, admin, or mobile UI)
+
+│
+
+├── backend/ # APIs, business rules, coupon logic, logging
+
+│
+
+├── ai/ # Computer vision (training and inference)
+
+│
+
+├── hardware/ # Camera, printer, GPIO, and device integrations
+
+│
+
+├── shared/ # Shared contracts, schemas, and constants
+
+│
+
+├── docs/ # Architecture docs, setup guides, diagrams
+
+│
+
+├── scripts/ # Automation, setup, and helper scripts
+
+│
+
+├── infra/ # Docker, CI/CD, and infrastructure configuration
+
+│
+
+├── README.md
+
+└── .gitignore
 
 ---
 
