@@ -1,0 +1,2 @@
+CV Model: YOLO11n https://docs.ultralytics.com/models/yolo11/
+Training Dataset: https://www.kaggle.com/datasets/siddharthkumarsah/plastic-bottles-image-dataset?resource=download
