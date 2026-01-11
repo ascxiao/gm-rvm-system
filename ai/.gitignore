@@ -1,1 +1,16 @@
 Plastic Bottle Image Dataset/
+# Python virtual environment
+venv/
+.venv/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# YOLO outputs
+runs/
+models/*.pt
+
+# System
+.DS_Store
