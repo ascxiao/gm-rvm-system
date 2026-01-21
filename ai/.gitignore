@@ -1,4 +1,4 @@
-Plastic Bottle Image Dataset/
+dataset/
 # Python virtual environment
 venv/
 .venv/
@@ -9,7 +9,6 @@ __pycache__/
 *.py[cod]
 
 # YOLO outputs
-runs/
 models/*.pt
 
 # System
