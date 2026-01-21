@@ -79,7 +79,7 @@ def start_scan():
 
 @app.post("/api/confirm", response_model=ConfirmResponse)
 def confirm_drop():
-    """Confirm item drop and proceed to printing."""
+    """Confirm item drop and complete the transaction."""
     state = state_manager.get_status()
 
     if state.state != State.VALID_ITEM:
@@ -90,13 +90,12 @@ def confirm_drop():
         )
 
     result = state_manager.confirm_drop()
-    logger.info("Coupon printed successfully")
+    logger.info("Valid item confirmed, transaction completed")
 
     return ConfirmResponse(
         success=True,
         state=result.state.value,
-        coupon_code=result.coupon_code,
-        message="Coupon printed! Thank you for recycling.",
+        message="Item accepted. Thank you for recycling.",
     )
 
 
@@ -122,7 +121,6 @@ def invalid_item_removed():
         item_detected=result.item_detected,
         confidence=result.confidence,
         error_message=result.error_message,
-        coupon_code=result.coupon_code,
     )
 
 
@@ -137,5 +135,4 @@ def reset_system():
         item_detected=result.item_detected,
         confidence=result.confidence,
         error_message=result.error_message,
-        coupon_code=result.coupon_code,
     )

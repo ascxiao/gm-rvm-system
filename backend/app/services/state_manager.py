@@ -1,23 +1,21 @@
 """State machine service for the vending system."""
-import uuid
 import logging
+from datetime import datetime
 from app.models import State, SystemState
 from app.modules.ai import RealAI
 from app.modules.arduino import MockArduino
-from app.modules import MockPrinter
 
 logger = logging.getLogger(__name__)
 
 
 class StateManager:
-    """Orchestrates system state transitions and logic."""
+    """Orchestrates system state transitions and core business logic."""
 
     def __init__(self):
-        """Initialize system state and modules."""
         self.current_state = SystemState(state=State.IDLE)
+        self.bottle_count = 0
         self.ai = RealAI()
         self.arduino = MockArduino()
-        self.printer = MockPrinter()
         self._initialize()
 
     def _initialize(self):
@@ -25,7 +23,6 @@ class StateManager:
         logger.info("Initializing system")
         self.arduino.connect()
         self.arduino.close_trapdoor()
-        self.printer.connect()
         logger.info("System ready")
 
     def get_status(self) -> SystemState:
@@ -67,21 +64,32 @@ class StateManager:
         if self.current_state.state != State.VALID_ITEM:
             return self.current_state
 
-        coupon_code = f"COUPON-{uuid.uuid4().hex[:8].upper()}"
-
         self.arduino.close_trapdoor()
         logger.info("Trapdoor closed")
 
+        # Transition to PRINTING
         self.current_state = SystemState(
             state=State.PRINTING,
             item_detected=self.current_state.item_detected,
             confidence=self.current_state.confidence,
-            coupon_code=coupon_code,
         )
         logger.info("State transition: VALID_ITEM -> PRINTING")
 
-        self.printer.print_coupon(coupon_code)
+        # Log accepted bottle
+        self.bottle_count += 1
+        timestamp = datetime.now().isoformat(timespec="seconds")
 
+        logger.info(
+            "Bottle accepted | count=%d | time=%s | confidence=%.2f",
+            self.bottle_count,
+            timestamp,
+            self.current_state.confidence,
+        )
+
+        # Placeholder for future thermal printer integration
+        logger.info("Reward printing triggered (placeholder)")
+
+        # Return to IDLE
         self.current_state = SystemState(state=State.IDLE)
         logger.info("State transition: PRINTING -> IDLE")
 
@@ -108,5 +116,4 @@ class StateManager:
         logger.info("Shutting down system")
         self.arduino.close_trapdoor()
         self.arduino.disconnect()
-        self.printer.disconnect()
         logger.info("Shutdown complete")

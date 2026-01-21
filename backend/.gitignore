@@ -47,7 +47,7 @@ logs/
 *.log
 
 # Test File
-test_camera_yolo.py
+test_camera_ai.py
 
 # Env files if ever used
 
