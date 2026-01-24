@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reverse Vending Machine</title>
+</head>
+<body>
+    <div>
+        <div id="bottleCount">Bottles: 0</div> <!--ga back to 0 tga reload but sa backend ga record tanan nga bottles with time-->
+        
+        <div>
+            <img id="videoStream" src="http://localhost:8000/api/video-feed" width="640" height="480">
+        </div>
+
+        <button id="scanButton">Ready to Scan</button>
+        
+        <div id="status">
+            Place a water bottle in front of the camera and click "Ready to Scan"
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const scanButton = document.getElementById('scanButton');
+        const statusDiv = document.getElementById('status');
+        const bottleCountDiv = document.getElementById('bottleCount');
+
+        let currentState = 'IDLE';
+        let pollingInterval = null;
+
+        function updateStatus(message, state) {
+            statusDiv.innerHTML = message;
+            currentState = state.toUpperCase();
+        }
+
+        async function pollStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+                
+                const state = data.state.toLowerCase();
+                
+                if (state === 'idle') {
+                    scanButton.disabled = false;
+                    scanButton.textContent = 'Ready to Scan';
+                    updateStatus('Place a water bottle in front of the camera and click "Ready to Scan"', 'idle');
+                } else if (state === 'scanning') {
+                    scanButton.disabled = true;
+                    scanButton.textContent = 'Scanning...';
+                    updateStatus('Scanning item...', 'scanning');
+                } else if (state === 'valid_item') {
+                    scanButton.disabled = true;
+                    scanButton.textContent = 'Processing...';
+                    updateStatus(`✓ WATER BOTTLE DETECTED!<br>Confidence: ${(data.confidence * 100).toFixed(0)}%<br>Trapdoor opening... Drop your bottle now!`, 'valid');
+                    
+                    setTimeout(async () => {
+                        await fetch(`${API_BASE}/confirm`, { method: 'POST' });
+                    }, 3000);
+                } else if (state === 'invalid_item') {
+                    scanButton.disabled = true;
+                    scanButton.textContent = 'Invalid Item';
+                    updateStatus(`✗ NOT A BOTTLE!<br>Detected: ${data.item_detected || 'Unknown'}<br>Please remove it and try again`, 'invalid');
+                    
+                    setTimeout(async () => {
+                        await fetch(`${API_BASE}/invalid-item-removed`, { method: 'POST' });
+                    }, 3000);
+                } else if (state === 'printing') {
+                    scanButton.disabled = true;
+                    scanButton.textContent = 'Printing...';
+                    updateStatus('Printing voucher... Thank you for recycling!', 'valid');
+                }
+            } catch (err) {
+                console.error('Status poll error:', err);
+            }
+        }
+
+        scanButton.addEventListener('click', async () => {
+            if (currentState !== 'IDLE') return;
+            
+            try {
+                scanButton.disabled = true;
+                scanButton.textContent = 'Scanning...';
+                updateStatus('Scanning item...', 'scanning');
+                
+                const response = await fetch(`${API_BASE}/scan`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    let currentCount = parseInt(bottleCountDiv.textContent.split(': ')[1]);
+                    bottleCountDiv.textContent = `Bottles: ${currentCount + 1}`;
+                }
+            } catch (err) {
+                console.error('Scan error:', err);
+                updateStatus('Error scanning. Please try again.', 'invalid');
+                scanButton.disabled = false;
+            }
+        });
+
+        pollStatus();
+        pollingInterval = setInterval(pollStatus, 500);
+    </script>
+</body>
+</html>
