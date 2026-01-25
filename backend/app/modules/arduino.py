@@ -23,6 +23,7 @@ class MockArduino:
     def disconnect(self) -> bool:
         """Disconnect from Arduino."""
         self.connected = False
+        self.trapdoor_open = False
         logger.info("Arduino disconnected")
         return True
 

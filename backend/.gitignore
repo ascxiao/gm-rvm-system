@@ -38,16 +38,12 @@ ENV/
 .coverage
 htmlcov/
 
+# Log files
+logs/bottle_log_*
+
 # OS
 .DS_Store
 Thumbs.db
-
-# Logs
-logs/
-*.log
-
-# Test File
-test_camera_ai.py
 
 # Env files if ever used
 
