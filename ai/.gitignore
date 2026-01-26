@@ -1,0 +1,15 @@
+dataset/
+# Python virtual environment
+venv/
+.venv/
+.env/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# YOLO outputs
+models/*.pt
+
+# System
+.DS_Store
