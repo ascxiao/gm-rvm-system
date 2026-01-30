@@ -75,6 +75,7 @@ class StateManager:
                 confidence=confidence,
             )
             logger.info("State transition: SCANNING -> VALID_ITEM")
+            logger.info(f"✅ Valid item detected: {detected_class} ({confidence:.2%})")
             self.arduino.open_trapdoor()
         else:
             self.current_state = SystemState(
@@ -93,6 +94,10 @@ class StateManager:
 
         self.arduino.close_trapdoor()
         logger.info("Trapdoor closed")
+
+        # Trigger coupon printing
+        self.arduino.print_coupon()
+        logger.info("Coupon print signal sent")
 
         self.current_state = SystemState(
             state=State.PRINTING,
