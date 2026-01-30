@@ -2,6 +2,7 @@
 import logging
 import asyncio
 import cv2
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -116,21 +117,28 @@ def get_status():
 @app.post("/api/scan", response_model=ScanResponse)
 def start_scan():
     """Start scanning for an item."""
+    logger.info("\n" + "="*60)
+    logger.info("🔍 SCAN REQUEST RECEIVED")
+    logger.info("="*60)
+    
     state = state_manager.get_status()
-    logger.info(f"Scan request received. Current state: {state.state.value}")
+    logger.info(f"Current state: {state.state.value}")
 
     if state.state != State.IDLE:
-        logger.warning(f"Scan requested while in {state.state.value} state")
+        logger.warning(f"❌ Scan requested while in {state.state.value} state")
         raise HTTPException(
             status_code=400,
             detail=f"Cannot scan when in {state.state.value} state",
         )
 
+    logger.info("Starting scan detection...")
     result = state_manager.start_scan()
     logger.info(f"Scan completed. Result state: {result.state.value}")
 
     if result.state == State.VALID_ITEM:
-        logger.info("Valid item detected")
+        logger.info("✅ Valid item detected")
+        logger.info(f"📦 Detected: {result.item_detected} ({result.confidence:.2%})")
+        logger.info("="*60 + "\n")
         return ScanResponse(
             success=True,
             state=result.state.value,
@@ -139,7 +147,8 @@ def start_scan():
             message="Water bottle detected! Trapdoor opening...",
         )
 
-    logger.info("Invalid item detected")
+    logger.warning("❌ Invalid item detected")
+    logger.info("="*60 + "\n")
     return ScanResponse(
         success=False,
         state=result.state.value,
@@ -163,8 +172,9 @@ def confirm_drop():
             message="Item already processed.",
         )
 
+    logger.info("🎟️  Processing confirm - closing trapdoor and printing coupon...")
     result = state_manager.confirm_drop()
-    logger.info("Valid item confirmed, transaction completed")
+    logger.info("✅ Valid item confirmed, transaction completed")
 
     return ConfirmResponse(
         success=True,
@@ -198,6 +208,24 @@ def invalid_item_removed():
         confidence=result.confidence,
         error_message=result.error_message,
     )
+
+
+@app.post("/api/trigger-arduino")
+def trigger_arduino():
+    """Dummy endpoint to test Arduino signal triggering."""
+    logger.info("🤖 ARDUINO TEST ENDPOINT CALLED")
+    logger.info("   Note: In production, trapdoor opens on scan, coupon prints on confirm")
+    
+    # Get current arduino status for testing
+    arduino_status = state_manager.arduino.get_status()
+    
+    return {
+        "success": True,
+        "message": "Arduino status retrieved (test endpoint)",
+        "note": "Trapdoor opens automatically on valid scan. Coupon prints on confirm.",
+        "arduino_status": arduino_status,
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 @app.post("/api/reset", response_model=StatusResponse)
