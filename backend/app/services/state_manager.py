@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from app.models import State, SystemState
 from app.modules.ai import RealAI
-from app.modules.arduino import MockArduino
+from app.modules.arduino import ArduinoController
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class StateManager:
         self.current_state = SystemState(state=State.IDLE)
         self.bottle_id = 0
         self.ai = RealAI()
-        self.arduino = MockArduino()
+        self.arduino = ArduinoController()
 
         base_dir = Path(__file__).parent.parent.parent
         self.logs_dir = base_dir / "logs"
@@ -49,6 +49,17 @@ class StateManager:
         except Exception as e:
             logger.error("Failed to write to CSV: %s", e)
 
+    def _print_coupon(self) -> bool:
+        """Handle PC-based coupon printing (printer connected to PC)."""
+        try:
+            logger.info("Printing coupon via PC placeholder)")
+            # Placeholder for actual printing logic
+            # Example: send print job to connected printer
+            return True
+        except Exception as e:
+            logger.error("Failed to print coupon: %s", e)
+            return False
+
     def _initialize(self):
         logger.info("Initializing system")
         self.arduino.connect()
@@ -76,7 +87,7 @@ class StateManager:
             )
             logger.info("State transition: SCANNING -> VALID_ITEM")
             logger.info(f"✅ Valid item detected: {detected_class} ({confidence:.2%})")
-            self.arduino.open_trapdoor()
+            self.arduino.open_trapdoor_with_timer(auto_close_delay=2.0)
         else:
             self.current_state = SystemState(
                 state=State.INVALID_ITEM,
@@ -92,12 +103,8 @@ class StateManager:
         if self.current_state.state != State.VALID_ITEM:
             return self.current_state
 
-        self.arduino.close_trapdoor()
-        logger.info("Trapdoor closed")
-
-        # Trigger coupon printing
-        self.arduino.print_coupon()
-        logger.info("Coupon print signal sent")
+        self._print_coupon()
+        logger.info("Coupon print signal sent to PC printer")
 
         self.current_state = SystemState(
             state=State.PRINTING,
@@ -113,13 +120,12 @@ class StateManager:
         )
 
         self._log_to_csv(
-            self.current_state.item_detected,
-            self.current_state.confidence,
+            self.current_state.item_detected or "unknown",
+            self.current_state.confidence or 0.0,
         )
 
         logger.info("Reward printing triggered (placeholder)")
         
-        # Auto-transition to IDLE after brief reward processing
         self.current_state = SystemState(state=State.IDLE)
         logger.info("State transition: PRINTING -> IDLE")
 

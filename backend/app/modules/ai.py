@@ -3,6 +3,7 @@ import cv2
 import logging
 import threading
 from pathlib import Path
+from typing import Optional
 from ultralytics import YOLO
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ BOTTLE_CONFIDENCE_THRESHOLD = 0.3
 class RealAI:
     """YOLO-based object detection service."""
 
-    def __init__(self, model_path: str = None):
+    def __init__(self, model_path: Optional[str] = None):
         logger.info("Initializing AI module")
 
         if model_path is None:

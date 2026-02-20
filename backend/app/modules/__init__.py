@@ -1,6 +1,6 @@
 """Initialize modules package."""
 from .ai import RealAI
-from .arduino import MockArduino
+from .arduino import ArduinoController
 
-__all__ = ["RealAI", "MockArduino"]
+__all__ = ["RealAI", "ArduinoController"]
 
