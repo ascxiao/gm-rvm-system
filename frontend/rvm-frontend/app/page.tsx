@@ -151,7 +151,7 @@ export default function Home() {
           </div>
           <span className="font-bold text-xl">SUCCESSFUL!</span>
           <span className="font-bold text-xl animate-pulse">
-            Printing coupon...
+            Press confirm to print coupon...
           </span>
           <div className="text-center mt-4">
             <p className="text-sm text-[#114E1A]">

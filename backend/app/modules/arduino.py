@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class ArduinoController:
-    def __init__(self, port: str = "COM5", baudrate: int = 9600, timeout: float = 1.0):
+    def __init__(self, port: str = "/dev/tty.usbmodem1101", baudrate: int = 9600, timeout: float = 1.0):
         if port is None:
             port = self._find_arduino_port()
             if port is None:
@@ -131,3 +131,6 @@ class ArduinoController:
             "connected": self.connected,
             "trapdoor_open": self.trapdoor_open,
         }
+    
+arduino_controller = ArduinoController()
+arduino_controller.connect()
