@@ -116,11 +116,11 @@ def get_status():
 
 @app.post("/api/scan", response_model=ScanResponse)
 def start_scan():
-    """Start scanning for an item."""
+    """Start scanning for an item (NO PRINTING HERE)."""
     logger.info("\n" + "="*60)
     logger.info("🔍 SCAN REQUEST RECEIVED")
     logger.info("="*60)
-    
+
     state = state_manager.get_status()
     logger.info(f"Current state: {state.state.value}")
 
@@ -139,16 +139,18 @@ def start_scan():
         logger.info("✅ Valid item detected")
         logger.info(f"📦 Detected: {result.item_detected} ({result.confidence:.2%})")
         logger.info("="*60 + "\n")
+
         return ScanResponse(
             success=True,
             state=result.state.value,
             item_detected=result.item_detected,
             confidence=result.confidence,
-            message="Water bottle detected! Trapdoor opening...",
+            message="Water bottle detected! Please confirm to complete.",
         )
 
     logger.warning("❌ Invalid item detected")
     logger.info("="*60 + "\n")
+
     return ScanResponse(
         success=False,
         state=result.state.value,
@@ -157,31 +159,59 @@ def start_scan():
         message=result.error_message or "Invalid item detected.",
     )
 
-
 @app.post("/api/confirm", response_model=ConfirmResponse)
 def confirm_drop():
-    """Confirm item drop and complete the transaction."""
+    """Confirm item drop and complete transaction (PRINTS ONCE)."""
     state = state_manager.get_status()
 
+    # Idempotent safety: if already processed, do NOT print again
     if state.state != State.VALID_ITEM:
-        # If already processed (PRINTING or IDLE), just return ok (idempotent)
-        logger.info(f"Confirm called while in {state.state.value} state - returning ok")
+        logger.info(f"Confirm called while in {state.state.value} state - no action")
         return ConfirmResponse(
             success=True,
             state=state.state.value,
             message="Item already processed.",
         )
 
-    logger.info("🎟️  Processing confirm - closing trapdoor and printing coupon...")
+    logger.info("🎟️ Processing confirm - closing trapdoor...")
     result = state_manager.confirm_drop()
     logger.info("✅ Valid item confirmed, transaction completed")
+
+    # ✅ PRINT ONLY HERE
+    try:
+        from app.modules.printer import print_receipt
+        import random, string
+        coupon_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        # Use ANSI escape codes for bold text (if supported by printer)
+        bold_on = '\033[1m'
+        bold_off = '\033[0m'
+        receipt_text = (
+            "================================\n"
+            "      RECYCLING RECEIPT\n"
+            "================================\n"
+            f"Item: {state.item_detected}\n"
+            f"Confidence: {state.confidence:.2%}\n"
+            f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            "--------------------------------\n"
+            "Coupon Code:\n"
+            f"{bold_on}{coupon_code}{bold_off}\n"
+            "--------------------------------\n"
+            "Thank you for recycling!\n"
+            "\n"
+        )
+        if print_receipt(receipt_text):
+            logger.info("📠 Receipt sent to printer successfully")
+        else:
+            logger.warning("⚠️ Failed to print receipt")
+
+    except Exception as e:
+        logger.error(f"Printing failed on confirm: {e}")
 
     return ConfirmResponse(
         success=True,
         state=result.state.value,
         message="Item accepted. Thank you for recycling.",
     )
-
 
 @app.post("/api/invalid-item-removed", response_model=StatusResponse)
 def invalid_item_removed():
